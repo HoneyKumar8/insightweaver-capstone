@@ -47,6 +47,31 @@ function drawChart(labels, values, titleText) {
                 label: titleText,
                 data: values
             }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: { display: false }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        // show thousands separators
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
         }
     });
 }
+
+
+// at bottom of script.js
+window.onload = function() {
+    // show product chart automatically
+    loadProductChart();
+};

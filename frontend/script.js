@@ -7,7 +7,10 @@ async function loadSummary() {
     const res = await fetch(`${API_BASE}/summary`);
     const data = await res.json();
     document.getElementById("summaryBox").textContent = JSON.stringify(data, null, 4);
+    // load insights as well
+    await loadInsights();
 }
+
 
 // ---------- Product Chart ----------
 async function loadProductChart() {
@@ -72,6 +75,27 @@ function drawChart(labels, values, titleText) {
 
 // at bottom of script.js
 window.onload = function() {
-    // show product chart automatically
     loadProductChart();
+    loadInsights();
 };
+
+// ---------- Insights ----------
+async function loadInsights() {
+    try {
+        const res = await fetch(`${API_BASE}/insights`);
+        const data = await res.json();
+        const list = data.insights || [];
+        const container = document.getElementById("insightsList");
+        if (list.length === 0) {
+            container.innerHTML = "<em>No interesting insights found.</em>";
+            return;
+        }
+        // Render as bullet list
+        const html = "<ul>" + list.map(s => `<li>${s}</li>`).join("") + "</ul>";
+        container.innerHTML = html;
+        // Optionally return structured for debugging
+        return data.structured || {};
+    } catch (err) {
+        document.getElementById("insightsList").textContent = "Error loading insights: " + err;
+    }
+}

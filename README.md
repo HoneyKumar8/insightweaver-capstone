@@ -1,16 +1,17 @@
-# InsightWeaver — Capstone Project
+# InsightWeaver — Sales Dashboard (Capstone)
 
-## What is this
-InsightWeaver is a small app that analyzes a sales CSV and shows charts + short plain-English insights.
+A small full-stack dashboard that reads a CSV sales dataset and provides:
+- Summary statistics
+- Charts (Chart.js)
+- Automated plain-English insights
+- Simple natural-language query handler
+- Simple linear forecast for next month
 
-## Project layout
-- `data/` : dataset(s) (contains sales_data.csv)
-- `.venv/` : local Python virtual environment (ignored in git)
-- `test_load.py` : simple data-loading test
-- `requirements.txt` : pinned Python packages
+Live demo: https://insightweaver-capstone.onrender.com
 
-## How to run (local)
-1. Activate virtualenv:
-   - PowerShell: `.venv\Scripts\Activate.ps1`
-   - cmd: `.venv\Scripts\activate`
-2. Run: `python test_load.py`
+## Local setup (Windows)
+
+1. Clone repo
+```bash
+git clone https://github.com/HoneyKumar8/insightweaver-capstone.git
+cd insightweaver-capstone

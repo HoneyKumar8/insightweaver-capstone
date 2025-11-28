@@ -11,9 +11,22 @@
     <h1>📊 InsightWeaver — Sales Dashboard</h1>
 
     <div class="container">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <div>
         <button onclick="loadSummary()">Load Summary</button>
         <button onclick="loadProductChart()">Show Sales by Product</button>
         <button onclick="loadRegionChart()">Show Sales by Region</button>
+        <button onclick="loadForecast()">Forecast next month</button>
+    </div>
+
+    <div style="margin-left:auto; min-width:420px;">
+        <div style="display:flex; gap:8px;">
+            <input id="queryInput" type="text" placeholder="Ask a question (e.g. 'Which product sold the most?')" style="flex:1; padding:8px; border-radius:6px; border:none; margin-right:8px;">
+            <button onclick="sendQuery()">Ask</button>
+        </div>
+        <div id="queryAnswer" style="margin-top:8px; font-size:16px; color:#cfeffd;"></div>
+    </div>
+</div>
 
         <h2>Summary</h2>
 <pre id="summaryBox">Click "Load Summary" to view stats...</pre>

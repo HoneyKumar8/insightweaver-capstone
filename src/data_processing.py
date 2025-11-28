@@ -134,6 +134,111 @@ def generate_insights(df: pd.DataFrame, max_insights=6) -> dict:
     }
     return {"insights": insights, "structured": structured}
 
+# ---- Simple natural-language query handler ----
+def handle_query(df: pd.DataFrame, query: str) -> dict:
+    """
+    Very small, rule-based query handler.
+    Returns:
+      {
+        "answer": "short plain english",
+        "details": {...}  # optional structured data
+      }
+    """
+    q = (query or "").strip().lower()
+
+    # empty
+    if q == "":
+        return {"answer": "Please ask a question about the data (example: 'Which product sold the most?')."}
+
+    # total sales
+    if "total" in q and "sale" in q:
+        total = int(df["Sales"].sum())
+        return {"answer": f"Total sales: {total:,}.", "details": {"total_sales": total}}
+
+    # top product
+    if "product" in q and ("top" in q or "most" in q or "best" in q or "largest" in q):
+        agg = df.groupby("Product", as_index=False)["Sales"].sum().sort_values("Sales", ascending=False)
+        top = agg.iloc[0]
+        return {"answer": f"Top product is {top['Product']} with {int(top['Sales']):,} sales.", "details": {"product": top["Product"], "sales": int(top["Sales"])}}
+
+    # top region
+    if "region" in q and ("top" in q or "most" in q or "largest" in q):
+        agg = df.groupby("Region", as_index=False)["Sales"].sum().sort_values("Sales", ascending=False)
+        top = agg.iloc[0]
+        return {"answer": f"Top region is {top['Region']} with {int(top['Sales']):,} sales.", "details": {"region": top["Region"], "sales": int(top["Sales"])}}
+
+    # month with highest sales
+    if ("month" in q and ("high" in q or "most" in q or "highest" in q or "top" in q)):
+        m = monthly_totals(df).sort_values("Sales", ascending=False).reset_index(drop=True)
+        top = m.iloc[0]
+        return {"answer": f"Highest-sales month is {top['Month']} with {int(top['Sales']):,} sales.", "details": {"month": top["Month"], "sales": int(top["Sales"])}}
+
+    # biggest month-over-month growth
+    if "growth" in q or "increase" in q or ("month" in q and "change" in q):
+        m = monthly_totals(df)
+        m["pct_change"] = m["Sales"].pct_change() * 100
+        changes = m.dropna(subset=["pct_change"]).copy()
+        if len(changes) == 0:
+            return {"answer": "No month-over-month data available to compute growth."}
+        top = changes.sort_values("pct_change", ascending=False).iloc[0]
+        return {"answer": f"Biggest month-over-month increase: {top['Month']} with {top['pct_change']:.1f}% (total {int(top['Sales']):,}).", "details": {"month": top["Month"], "pct_change": float(top["pct_change"]), "sales": int(top["Sales"])}}
+
+    # product share
+    if "share" in q or ("what" in q and "percent" in q and "product" in q):
+        agg = df.groupby("Product", as_index=False)["Sales"].sum().sort_values("Sales", ascending=False)
+        total = agg["Sales"].sum()
+        shares = []
+        for _, r in agg.iterrows():
+            shares.append({"product": r["Product"], "sales": int(r["Sales"]), "pct": float((r["Sales"]/total) * 100)})
+        return {"answer": "Product share computed.", "details": {"shares": shares}}
+
+    # fallback
+    return {"answer": "Sorry — I couldn't understand that. Try: 'top product', 'top region', 'total sales', 'month growth'."}
+
+# ---- Simple forecasting helpers ----
+def numeric_month_index(m: str) -> int:
+    """
+    Map month name (as appears in dataset) to an index.
+    We preserve the dataset ordering: first month encountered is index 0, next is 1, etc.
+    """
+    # This function isn't used externally but kept for clarity in mapping months to indices
+    return None
+
+def generate_forecast(df, months_ahead=1):
+    """
+    Very simple linear forecast on monthly totals.
+    Returns:
+      {
+        "monthly_totals": [ {Month, Sales}, ... ],
+        "forecast": {
+           "next_month_index": N,
+           "predicted_sales": float,
+           "model": {"slope": float, "intercept": float}
+        }
+      }
+    """
+    m_df = monthly_totals(df)  # has Month, Sales
+    # For polyfit we need numeric x values. Use 0..n-1 preserving present order.
+    n = len(m_df)
+    if n < 2:
+        return {"error": "Not enough months to forecast (need at least 2).", "monthly_totals": m_df.to_dict(orient="records")}
+    x = np.arange(n).astype(float)
+    y = m_df["Sales"].astype(float).values
+    # fit a first-degree polynomial (linear)
+    slope, intercept = np.polyfit(x, y, 1)
+    # predict next month(s)
+    next_x = n + (months_ahead - 1)
+    predicted = float(slope * next_x + intercept)
+    return {
+        "monthly_totals": m_df.to_dict(orient="records"),
+        "forecast": {
+            "next_month_index": int(next_x),
+            "predicted_sales": predicted,
+            "model": {"slope": float(slope), "intercept": float(intercept)}
+        }
+    }
+
+
 # quick local test when run directly
 if __name__ == "__main__":
     df = load_data()

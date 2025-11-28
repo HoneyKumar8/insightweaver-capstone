@@ -1,6 +1,7 @@
 // frontend/script.js
 // Use relative API paths so it works both locally and when deployed
-const API_BASE = "";
+const API_BASE = "https://insightweaver-capstone.onrender.com";
+
 
 let chartRef = null;
 
